@@ -214,7 +214,7 @@ public class SendMockLocationService extends Service implements
                 }
 
                 // Get the device uptime and the current clock time
-                elapsedTimeNanos = SystemClock.elapsedRealtimeNanos();
+//                elapsedTimeNanos = SystemClock.elapsedRealtimeNanos();
                 currentTime = System.currentTimeMillis();
 
                 /*
@@ -226,23 +226,30 @@ public class SendMockLocationService extends Service implements
                  */
                 do {
                     for (int index = 0; index < mLocationArray.length; index++) {
+                        mockLocation = new Location(LocationUtils.LOCATION_PROVIDER);
                         /*
                          * Set the time values for the test location. Both an elapsed system uptime
                          * and the current clock time in UTC timezone must be specified.
                          */
-                        mockLocation.setElapsedRealtimeNanos(elapsedTimeNanos);
+//                        mockLocation.setElapsedRealtimeNanos(elapsedTimeNanos);
                         mockLocation.setTime(currentTime);
-
+                    	
                         // Set the location accuracy, latitude, and longitude
                         mockLocation.setAccuracy(mLocationArray[index].Accuracy);
                         mockLocation.setLatitude(mLocationArray[index].Latitude);
                         mockLocation.setLongitude(mLocationArray[index].Longitude);
 
-/*                        Method locationJellyBeanFixMethod = Location.class.getMethod("makeComplete");
-                        if (locationJellyBeanFixMethod != null) {
-                           locationJellyBeanFixMethod.invoke(mockLocation);
+                        // API Level 17 and above require elapsed time in nanoseconds
+                        // for all mocked locations, which makeComplete will do for us
+                        // but earlier API versions may not have this method
+                        try {
+	                        Method locationJellyBeanFixMethod = Location.class.getMethod("makeComplete");
+	                        if (locationJellyBeanFixMethod != null) {
+	                           locationJellyBeanFixMethod.invoke(mockLocation);
+	                        }
+                        } catch (Exception e) {
+                            return;
                         }
-*/
                         // Inject the test location into Location Services
                         mLocationClient.setMockLocation(mockLocation);                        
 //                	    mLocationManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, mockLocation);
@@ -258,8 +265,8 @@ public class SendMockLocationService extends Service implements
                              * Change the elapsed uptime and clock time by the amount of time
                              * requested.
                              */
-                            elapsedTimeNanos += (long) injectionInterval *
-                                    LocationUtils.NANOSECONDS_PER_SECOND;
+//                            elapsedTimeNanos += (long) injectionInterval *
+//                                    LocationUtils.NANOSECONDS_PER_SECOND;
                             currentTime += injectionInterval *
                                     LocationUtils.MILLISECONDS_PER_SECOND;
                     }

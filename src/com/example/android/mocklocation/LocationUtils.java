@@ -95,10 +95,10 @@ public final class LocationUtils {
     // An array of latitudes for constructing test data
     public static final double[] WAYPOINTS_LAT = {
     37.377166,
-    37.380866,
-    37.381224,
+    37.380866, // approx 400m
+    37.381224, // approx 70m
     37.382008,
-    37.385486,
+    37.385486, // approx 320m
     37.387021,
     37.384847,
     37.385461};

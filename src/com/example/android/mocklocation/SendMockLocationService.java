@@ -16,10 +16,16 @@
 
 package com.example.android.mocklocation;
 
+import java.lang.reflect.Method;
+
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -34,7 +40,6 @@ import android.text.TextUtils;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
 
 /**
@@ -70,6 +75,10 @@ public class SendMockLocationService extends Service implements
 
     // Object that connects the app to Location Services
     LocationClient mLocationClient;
+    
+    // Stuff for trying LocationManager instead
+	private Activity parentActivity = null;
+    LocationManager mLocationManager;
 
     // A background thread for the work tasks
     HandlerThread mWorkThread;
@@ -143,6 +152,7 @@ public class SendMockLocationService extends Service implements
             boolean testOnce = false;
             // Create a new Location to inject into Location Services
             Location mockLocation = new Location(LocationUtils.LOCATION_PROVIDER);
+//    	    Location mockLocation = new Location(LocationManager.GPS_PROVIDER);
 
             // Time values to put into the mock Location
             long elapsedTimeNanos;
@@ -153,6 +163,19 @@ public class SendMockLocationService extends Service implements
             String action = params.TestAction;
             int pauseInterval = params.TestPause;
             int injectionInterval = params.InjectionPause;
+
+            // Using Location Manager instead
+    	    mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    	    mLocationManager.addTestProvider(LocationManager.GPS_PROVIDER,
+    	                        "requiresNetwork" == "",
+    	                        "requiresSatellite" == "",
+    	                        "requiresCell" == "",
+    	                        "hasMonetaryCost" == "",
+    	                        "supportsAltitude" == "",
+    	                        "supportsSpeed" == "",
+    	                        "supportsBearing" == "",
+    	                         android.location.Criteria.NO_REQUIREMENT,
+    	                         android.location.Criteria.ACCURACY_FINE);
 
             /*
              * Determine if this is a one-time run or a continuous run
@@ -169,6 +192,10 @@ public class SendMockLocationService extends Service implements
 
                 // Start mock location mode in Location Services
                 mLocationClient.setMockMode(true);
+//        	    mLocationManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, true);
+//        	    mLocationManager.setTestProviderStatus(LocationManager.GPS_PROVIDER,
+//        	                             LocationProvider.AVAILABLE,
+//        	                             null,System.currentTimeMillis());
 
                 // Remove the notification that testing is started
                 removeNotification();
@@ -187,7 +214,7 @@ public class SendMockLocationService extends Service implements
                 }
 
                 // Get the device uptime and the current clock time
-//                elapsedTimeNanos = SystemClock.elapsedRealtimeNanos();
+                elapsedTimeNanos = SystemClock.elapsedRealtimeNanos();
                 currentTime = System.currentTimeMillis();
 
                 /*
@@ -203,7 +230,7 @@ public class SendMockLocationService extends Service implements
                          * Set the time values for the test location. Both an elapsed system uptime
                          * and the current clock time in UTC timezone must be specified.
                          */
-//                        mockLocation.setElapsedRealtimeNanos(elapsedTimeNanos);
+                        mockLocation.setElapsedRealtimeNanos(elapsedTimeNanos);
                         mockLocation.setTime(currentTime);
 
                         // Set the location accuracy, latitude, and longitude
@@ -211,8 +238,14 @@ public class SendMockLocationService extends Service implements
                         mockLocation.setLatitude(mLocationArray[index].Latitude);
                         mockLocation.setLongitude(mLocationArray[index].Longitude);
 
+/*                        Method locationJellyBeanFixMethod = Location.class.getMethod("makeComplete");
+                        if (locationJellyBeanFixMethod != null) {
+                           locationJellyBeanFixMethod.invoke(mockLocation);
+                        }
+*/
                         // Inject the test location into Location Services
-                        mLocationClient.setMockLocation(mockLocation);
+                        mLocationClient.setMockLocation(mockLocation);                        
+//                	    mLocationManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, mockLocation);
 
                         // Wait for the requested update interval, by putting the thread to sleep
                         try {
@@ -225,8 +258,8 @@ public class SendMockLocationService extends Service implements
                              * Change the elapsed uptime and clock time by the amount of time
                              * requested.
                              */
-//                            elapsedTimeNanos += (long) injectionInterval *
-//                                    LocationUtils.NANOSECONDS_PER_SECOND;
+                            elapsedTimeNanos += (long) injectionInterval *
+                                    LocationUtils.NANOSECONDS_PER_SECOND;
                             currentTime += injectionInterval *
                                     LocationUtils.MILLISECONDS_PER_SECOND;
                     }

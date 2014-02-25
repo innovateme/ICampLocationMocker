@@ -92,27 +92,30 @@ public final class LocationUtils {
     // The name used for all mock locations
     public static final String LOCATION_PROVIDER = "fused";
 
-    // An array of latitudes for constructing test data
+
+  // An array of latitudes for constructing test data
     public static final double[] WAYPOINTS_LAT = {
-    37.377166,
-    37.380866, // approx 400m
-    37.381224, // approx 70m
-    37.382008,
-    37.385486, // approx 320m
-    37.387021,
-    37.384847,
-    37.385461};
+    	39.74000930786133,
+    	39.72948736803213,
+    	39.75905344614125,
+    	39.83818578401349,
+    	39.82236660109556,
+     	39.78333037611430,
+    	39.78649630098329,
+    	39.74849558889175
+    };
 
     // An array of longitudes for constructing test data
     public static final double[] WAYPOINTS_LNG = {
-    -122.086966,
-    -122.086945,
-    -122.086344,
-    -122.086151,
-    -122.083941,
-    -122.083104,
-    -122.078683,
-    -122.078265};
+    	-104.99230194091797,
+    	-105.05701446533203,
+    	-105.10919952392578,
+    	-105.09683990478516,
+    	-104.99246978759766,
+    	-104.99796295166016,
+    	-104.92105865478516,
+    	-104.92517852783203
+    };
 
     // An array of accuracy values for constructing test data
     public static final float[] WAYPOINTS_ACCURACY = {

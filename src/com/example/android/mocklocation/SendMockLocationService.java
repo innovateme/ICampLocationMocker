@@ -18,14 +18,10 @@ package com.example.android.mocklocation;
 
 import java.lang.reflect.Method;
 
-import android.app.Activity;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -33,7 +29,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
@@ -76,10 +71,6 @@ public class SendMockLocationService extends Service implements
     // Object that connects the app to Location Services
     LocationClient mLocationClient;
     
-    // Stuff for trying LocationManager instead
-	private Activity parentActivity = null;
-    LocationManager mLocationManager;
-
     // A background thread for the work tasks
     HandlerThread mWorkThread;
 
@@ -110,6 +101,9 @@ public class SendMockLocationService extends Service implements
 
     // The type of test requested, either ACTION_START_ONCE or ACTION_START_CONTINUOUS
     private String mTestRequest;
+
+    private boolean testOnce = false;
+
 
     /**
      * Define a class that manages the work of injecting test locations, using the Android
@@ -149,10 +143,9 @@ public class SendMockLocationService extends Service implements
         @Override
         public void handleMessage(Message msg) {
 
-            boolean testOnce = false;
+            testOnce = false;
             // Create a new Location to inject into Location Services
             Location mockLocation = new Location(LocationUtils.LOCATION_PROVIDER);
-//    	    Location mockLocation = new Location(LocationManager.GPS_PROVIDER);
 
             // Time values to put into the mock Location
             long elapsedTimeNanos;
@@ -163,19 +156,6 @@ public class SendMockLocationService extends Service implements
             String action = params.TestAction;
             int pauseInterval = params.TestPause;
             int injectionInterval = params.InjectionPause;
-
-            // Using Location Manager instead
-    	    mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    	    mLocationManager.addTestProvider(LocationManager.GPS_PROVIDER,
-    	                        "requiresNetwork" == "",
-    	                        "requiresSatellite" == "",
-    	                        "requiresCell" == "",
-    	                        "hasMonetaryCost" == "",
-    	                        "supportsAltitude" == "",
-    	                        "supportsSpeed" == "",
-    	                        "supportsBearing" == "",
-    	                         android.location.Criteria.NO_REQUIREMENT,
-    	                         android.location.Criteria.ACCURACY_FINE);
 
             /*
              * Determine if this is a one-time run or a continuous run
@@ -192,10 +172,6 @@ public class SendMockLocationService extends Service implements
 
                 // Start mock location mode in Location Services
                 mLocationClient.setMockMode(true);
-//        	    mLocationManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, true);
-//        	    mLocationManager.setTestProviderStatus(LocationManager.GPS_PROVIDER,
-//        	                             LocationProvider.AVAILABLE,
-//        	                             null,System.currentTimeMillis());
 
                 // Remove the notification that testing is started
                 removeNotification();
@@ -252,7 +228,6 @@ public class SendMockLocationService extends Service implements
                         }
                         // Inject the test location into Location Services
                         mLocationClient.setMockLocation(mockLocation);                        
-//                	    mLocationManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, mockLocation);
 
                         // Wait for the requested update interval, by putting the thread to sleep
                         try {
@@ -448,7 +423,11 @@ public class SendMockLocationService extends Service implements
             // Start connecting to Location Services
             mLocationClient.connect();
 
-        } else if (TextUtils.equals(mTestRequest, LocationUtils.ACTION_STOP_TEST)) {
+        }
+        else if (TextUtils.equals(mTestRequest, LocationUtils.ACTION_STOP_TEST)) {
+            if (mTestStarted) {
+                testOnce = true;
+            }
 
             // Remove any existing notifications
             removeNotification();
